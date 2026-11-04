@@ -1,40 +1,30 @@
 package main
 
 import (
-	"context"
-	"errors"
-	"log/slog"
+	"encoding/json"
+	"log"
 	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
-
-	"github.com/shellhaki/testapi/internal/config"
-	"github.com/shellhaki/testapi/internal/routes"
 )
 
 func main() {
-	if err := run(); err != nil {
-		slog.Error("server stopped", "error", err)
-		os.Exit(1)
-	}
-}
+	mux := http.NewServeMux()
 
-func run() error {
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
-	cfg := config.Load()
-	server := &http.Server{Addr: ":" + cfg.Port, Handler: routes.New(), ReadHeaderTimeout: 5 * time.Second}
-	go func() {
-		<-ctx.Done()
-		shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-		_ = server.Shutdown(shutdownCtx)
-	}()
-	slog.Info("server started", "port", cfg.Port)
-	if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-		return err
+	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{
+			"message": "api running",
+		})
+
+	})
+
+	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{
+			"message": "alive",
+		})
+	})
+
+	if err := http.ListenAndServe(":8080", mux); err != nil {
+		log.Fatal(err)
 	}
-	return nil
 }
