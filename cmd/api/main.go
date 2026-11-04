@@ -12,6 +12,9 @@ var started = time.Now()
 
 func main() {
 	log := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	if os.Getenv("DATABASE_URL") == "" {
+		panic("DATABASE_URL is not set")
+	}
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
@@ -23,7 +26,7 @@ func main() {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
-		reply(w, map[string]any{"message": "api running", "version": 3}) notDefined()
+		reply(w, map[string]any{"message": "api running", "version": 4})
 	})
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
 		reply(w, map[string]any{"message": "alive", "up_for": time.Since(started).Round(time.Second).String()})
