@@ -1,11 +1,13 @@
 package main
 
 import (
-	"encoding/json"
 	"log/slog"
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 var started = time.Now()
@@ -15,35 +17,22 @@ func main() {
 	if os.Getenv("DATABASE_URL") == "" {
 		panic("DATABASE_URL is not set")
 	}
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
+	// Parsed only: there's no database behind this test, but the driver is linked in like a real app's.
+	if _, err := pgxpool.ParseConfig(os.Getenv("DATABASE_URL")); err != nil {
+		log.Warn("bad DATABASE_URL", "err", err)
 	}
 	greeting := os.Getenv("GREETING")
 	if greeting == "" {
 		greeting = "hello"
 	}
-
-	mux := http.NewServeMux()
-	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
-		reply(w, map[string]any{"message": "api running", "version": 9})
-	})
-	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
-		reply(w, map[string]any{"message": "alive", "up_for": time.Since(started).Round(time.Second).String()})
-	})
-	mux.HandleFunc("GET /hello/{name}", func(w http.ResponseWriter, r *http.Request) {
-		log.Info("hello", "name", r.PathValue("name"))
-		reply(w, map[string]any{"message": greeting + ", " + r.PathValue("name")})
-	})
-
-	log.Info("server started", "port", port)
-	if err := http.ListenAndServe(":"+port, mux); err != nil {
+	gin.SetMode(gin.ReleaseMode)
+	r := gin.New()
+	r.GET("/", func(c *gin.Context) { c.JSON(http.StatusOK, gin.H{"message": "api running", "version": 10, "framework": "gin"}) })
+	r.GET("/health", func(c *gin.Context) { c.JSON(http.StatusOK, gin.H{"message": "alive", "up_for": time.Since(started).Round(time.Second).String()}) })
+	r.GET("/hello/:name", func(c *gin.Context) { c.JSON(http.StatusOK, gin.H{"message": greeting + ", " + c.Param("name")}) })
+	log.Info("server started", "port", os.Getenv("PORT"))
+	if err := r.Run(":" + os.Getenv("PORT")); err != nil {
 		log.Error("server stopped", "err", err)
 		os.Exit(1)
 	}
-}
-
-func reply(w http.ResponseWriter, v any) {
-	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(v)
 }
