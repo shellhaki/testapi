@@ -26,7 +26,7 @@ func main() {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
-		reply(w, map[string]any{"message": "api running", "version": 4})
+		reply(w, map[string]any{"message": "api running", "version": 5})
 	})
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
 		reply(w, map[string]any{"message": "alive", "up_for": time.Since(started).Round(time.Second).String()})
@@ -37,7 +37,7 @@ func main() {
 	})
 
 	log.Info("server started", "port", port)
-	if err := http.ListenAndServe(":"+port, mux); err != nil {
+	if err := http.ListenAndServe(":9000", mux); err != nil {
 		log.Error("server stopped", "err", err)
 		os.Exit(1)
 	}
