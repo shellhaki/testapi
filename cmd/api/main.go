@@ -27,7 +27,7 @@ func main() {
 	}
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
-	r.GET("/", func(c *gin.Context) { c.JSON(http.StatusOK, gin.H{"message": "api running", "version": 10, "framework": "gin"}) })
+	r.GET("/", func(c *gin.Context) { c.JSON(http.StatusOK, gin.H{"message": "api running", "version": 11, "framework": "gin"}) })
 	r.GET("/health", func(c *gin.Context) { c.JSON(http.StatusOK, gin.H{"message": "alive", "up_for": time.Since(started).Round(time.Second).String()}) })
 	r.GET("/hello/:name", func(c *gin.Context) { c.JSON(http.StatusOK, gin.H{"message": greeting + ", " + c.Param("name")}) })
 	log.Info("server started", "port", os.Getenv("PORT"))
